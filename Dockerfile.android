@@ -1,0 +1,30 @@
+# Image pour build Android Expo/React Native
+FROM node:20-bookworm
+
+# Dépendances système
+RUN apt-get update && apt-get install -y \
+    openjdk-17-jdk \
+    unzip \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Variables Android SDK
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_SDK_ROOT=$ANDROID_HOME
+ENV PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+
+# Installer Android SDK
+RUN mkdir -p $ANDROID_HOME/cmdline-tools && \
+    curl -o /tmp/cmdline.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip && \
+    unzip -q /tmp/cmdline.zip -d $ANDROID_HOME/cmdline-tools && \
+    mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest && \
+    rm /tmp/cmdline.zip
+
+# Accepter les licences et installer les composants
+RUN yes | sdkmanager --licenses 2>/dev/null || true
+RUN sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+WORKDIR /app

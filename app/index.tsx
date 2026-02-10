@@ -1,72 +1,119 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import ObjectiveCard from "../components/ObjectiveCard";
+import {
+  useObjectives,
+  getTodayDateString,
+} from "../context/ObjectivesContext";
 
 export default function Home() {
   const router = useRouter();
+  const { objectives, getOverallPercentage, getTodayStatus, updateDayStatus } =
+    useObjectives();
+
+  const handleSwipeSuccess = (objectiveId: string) => {
+    updateDayStatus(objectiveId, getTodayDateString(), "success");
+  };
+
+  const handleSwipeFail = (objectiveId: string) => {
+    updateDayStatus(objectiveId, getTodayDateString(), "fail");
+  };
+
+  const overallPercentage = getOverallPercentage();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Reminder</Text>
-      <Pressable
-        style={styles.button}
-        onPress={() => router.push("/motivation")}
+    <View style={styles.root}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.buttonText}>voir la motivation</Text>
-      </Pressable>
+        <View style={styles.percentageCard}>
+          <Text style={styles.percentageLabel}>Engagements globaux</Text>
+          <Text style={styles.percentageValue}>{overallPercentage}%</Text>
+          <Text style={styles.percentageSubtext}>
+            jours réussis / jours totaux
+          </Text>
+        </View>
+
+        <View style={styles.list}>
+          {objectives.map((objective) => (
+            <ObjectiveCard
+              key={objective.id}
+              objective={objective}
+              todayStatus={getTodayStatus(objective.id)}
+              onSwipeSuccess={() => handleSwipeSuccess(objective.id)}
+              onSwipeFail={() => handleSwipeFail(objective.id)}
+            />
+          ))}
+          <Pressable
+            style={styles.addCard}
+            onPress={() => router.push("/add-objective" as never)}
+          >
+            <Ionicons name="add-circle" size={48} color="#64748b" />
+            <Text style={styles.addText}>Ajouter un objectif</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: "#020617",
+  },
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#0f172a",
-  },
-  header: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  title: {
-    fontSize: 28,
-    color: "#38bdf8",
-    fontWeight: "bold",
-    marginBottom: 40,
   },
   content: {
-    flex: 5,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    padding: 20,
+    paddingBottom: 40,
   },
-  footer: {
-    flex: 1,
-    justifyContent: "center",
+  percentageCard: {
+    backgroundColor: "#0f172a",
+    borderRadius: 20,
+    padding: 24,
     alignItems: "center",
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#334155",
   },
-  headerText: {
-    fontSize: 24,
+  percentageLabel: {
+    color: "#94a3b8",
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  percentageValue: {
     color: "#38bdf8",
+    fontSize: 56,
     fontWeight: "bold",
   },
-  quote: {
-    fontSize: 20,
-    color: "#e5e7eb",
-    textAlign: "center",
-    fontStyle: "italic",
+  percentageSubtext: {
+    color: "#64748b",
+    fontSize: 12,
+    marginTop: 4,
   },
-  button: {
-    backgroundColor: "#38bdf8",
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 10,
+  list: {
+    gap: 12,
   },
-  buttonText: {
-    color: "#0f172a",
-    fontSize: 16,
-    fontWeight: "bold",
+  addCard: {
+    width: "100%",
+    minHeight: 120,
+    backgroundColor: "#0f172a",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#334155",
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  addText: {
+    color: "#64748b",
+    marginTop: 8,
+    fontSize: 14,
   },
 });

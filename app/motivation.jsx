@@ -47,7 +47,13 @@ export default function Index() {
   return (
     <View style={styles.container}>
       <MotivationCard quote={quote} />
-      <Pressable style={styles.button} onPress={changeQutote}>
+      <Pressable
+        style={styles.button}
+        onPress={() => {
+          changeMotivation;
+          scheduleNotification();
+        }}
+      >
         <Text style={styles.buttonText}>Nouvelle motivation</Text>
       </Pressable>
     </View>
