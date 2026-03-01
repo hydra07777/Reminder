@@ -48,6 +48,16 @@
             "minSdkVersion": 24
           }
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/morning.wav",
+            "./assets/sounds/noon.wav",
+            "./assets/sounds/evening.wav"
+          ]
+        }
       ]
     ],
     "experiments": {
