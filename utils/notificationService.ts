@@ -11,13 +11,29 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
+// Identifiants et canaux par créneau (un canal = un son sur Android)
 const NOTIFICATION_IDS = {
   morning: "motivational-morning",
   noon: "motivational-noon",
   evening: "motivational-evening",
+} as const;
+
+const CHANNEL_IDS = {
+  morning: "motivational-morning",
+  noon: "motivational-noon",
+  evening: "motivational-evening",
+} as const;
+
+// Sons par créneau (noms de fichiers déclarés dans app.json plugin expo-notifications)
+const SOUNDS: Record<keyof typeof NOTIFICATION_IDS, string> = {
+  morning: "morning.wav",
+  noon: "noon.wav",
+  evening: "evening.wav",
 };
 
 export async function requestNotificationPermissions(): Promise<boolean> {
@@ -46,15 +62,22 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     return false;
   }
 
-  // Configuration pour Android
+  // Configuration pour Android : 3 canaux = 3 sons (matin, midi, soir)
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("motivational", {
-      name: "Notifications d'encouragement",
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#38bdf8",
-      sound: "default",
-    });
+    const channelNames: Record<keyof typeof CHANNEL_IDS, string> = {
+      morning: "Rappel matin",
+      noon: "Rappel midi",
+      evening: "Rappel soir",
+    };
+    for (const timeOfDay of ["morning", "noon", "evening"] as const) {
+      await Notifications.setNotificationChannelAsync(CHANNEL_IDS[timeOfDay], {
+        name: channelNames[timeOfDay],
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#38bdf8",
+        sound: SOUNDS[timeOfDay],
+      });
+    }
   }
 
   return true;
@@ -66,7 +89,7 @@ function getNotificationTime(timeOfDay: TimeOfDay): {
 } {
   switch (timeOfDay) {
     case "morning":
-      return { hour: 8, minute: 30 }; // 8h00
+      return { hour: 8, minute: 30 };
     case "noon":
       return { hour: 12, minute: 30 }; // 12h30
     case "evening":
@@ -120,7 +143,7 @@ export async function scheduleMotivationalNotifications(
               ? "☀️ C'est midi !"
               : "🌙 Bonne soirée !",
         body: message,
-        sound: true,
+        sound: SOUNDS[timeOfDay],
       };
 
       // Ajouter la priorité Android si disponible
@@ -134,7 +157,7 @@ export async function scheduleMotivationalNotifications(
         content: notificationContent,
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          channelId: "motivational",
+          channelId: CHANNEL_IDS[timeOfDay],
           hour,
           minute,
         },
