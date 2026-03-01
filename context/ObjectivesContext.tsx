@@ -26,6 +26,7 @@ type ObjectivesContextType = {
     date: string,
     status: DayStatus,
   ) => Promise<void>;
+  extendObjective: (objectiveId: string, additionalDays: number) => Promise<void>;
   deleteObjective: (objectiveId: string) => Promise<void>;
   getOverallPercentage: () => number;
   getTodayStatus: (objectiveId: string) => DayStatus;
@@ -107,6 +108,20 @@ export function ObjectivesProvider({ children }: { children: ReactNode }) {
     setObjectives((prev) => prev.filter((obj) => obj.id !== objectiveId));
   }, []);
 
+  const extendObjective = useCallback(
+    async (objectiveId: string, additionalDays: number) => {
+      if (additionalDays <= 0) return;
+      setObjectives((prev) =>
+        prev.map((obj) =>
+          obj.id === objectiveId
+            ? { ...obj, durationDays: obj.durationDays + additionalDays }
+            : obj,
+        ),
+      );
+    },
+    [],
+  );
+
   const getOverallPercentage = useCallback(() => {
     let totalDays = 0;
     let successDays = 0;
@@ -137,6 +152,7 @@ export function ObjectivesProvider({ children }: { children: ReactNode }) {
         objectives,
         addObjective,
         updateDayStatus,
+        extendObjective,
         deleteObjective,
         getOverallPercentage,
         getTodayStatus,

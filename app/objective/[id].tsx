@@ -30,7 +30,7 @@ function formatDateForDisplay(dateStr: string): string {
 export default function ObjectiveDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { objectives, deleteObjective, updateDayStatus } = useObjectives();
+  const { objectives, deleteObjective, updateDayStatus, extendObjective } = useObjectives();
 
   // Trouver l'objectif et recalculer à chaque changement
   const objective = useMemo(
@@ -295,6 +295,11 @@ export default function ObjectiveDetail() {
     );
   };
 
+  const handleExtend = (additionalDays: number) => {
+    if (!objective) return;
+    extendObjective(objective.id, additionalDays);
+  };
+
   const handleDayStatusChange = (
     date: string,
     currentStatus: "success" | "fail" | null,
@@ -523,6 +528,41 @@ export default function ObjectiveDetail() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Prolonger l'objectif</Text>
+        <Text style={styles.extendHint}>
+          Ajoute des jours à la durée actuelle ({objective.durationDays} jours).
+        </Text>
+        <View style={styles.extendRow}>
+          <Pressable
+            style={styles.extendButton}
+            onPress={() => handleExtend(7)}
+          >
+            <Text style={styles.extendButtonText}>+7 jours</Text>
+          </Pressable>
+          <Pressable
+            style={styles.extendButton}
+            onPress={() => handleExtend(15)}
+          >
+            <Text style={styles.extendButtonText}>+15 jours</Text>
+          </Pressable>
+        </View>
+        <View style={styles.extendRow}>
+          <Pressable
+            style={styles.extendButton}
+            onPress={() => handleExtend(30)}
+          >
+            <Text style={styles.extendButtonText}>+1 mois</Text>
+          </Pressable>
+          <Pressable
+            style={styles.extendButton}
+            onPress={() => handleExtend(60)}
+          >
+            <Text style={styles.extendButtonText}>+2 mois</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Historique des jours</Text>
         {history.length === 0 ? (
           <Text style={styles.emptyText}>
@@ -660,6 +700,31 @@ const styles = StyleSheet.create({
   infoValue: {
     color: "#f8fafc",
     fontSize: 14,
+  },
+  extendHint: {
+    color: "#64748b",
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  extendRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 12,
+  },
+  extendButton: {
+    flex: 1,
+    backgroundColor: "#0f172a",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#334155",
+  },
+  extendButtonText: {
+    color: "#38bdf8",
+    fontSize: 14,
+    fontWeight: "600",
   },
   historyRow: {
     flexDirection: "row",
