@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import DynamicLogo from "../components/DynamicLogo";
 import ObjectiveCard from "../components/ObjectiveCard";
 import {
   useObjectives,
@@ -29,6 +30,9 @@ export default function Home() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.logoSection}>
+          <DynamicLogo size={88} showStreakBadge showLabel />
+        </View>
         <View style={styles.percentageCard}>
           <Text style={styles.percentageLabel}>Engagements globaux</Text>
           <Text style={styles.percentageValue}>{overallPercentage}%</Text>
@@ -36,6 +40,21 @@ export default function Home() {
             jours réussis / jours totaux
           </Text>
         </View>
+
+        <Pressable
+          style={styles.statsCard}
+          onPress={() => router.push("/stats" as never)}
+        >
+          <View style={styles.statsRow}>
+            <View>
+              <Text style={styles.statsTitle}>Statistiques globales</Text>
+              <Text style={styles.statsSubtitle}>
+                XP, séries, taux de réussite, activité
+              </Text>
+            </View>
+            <Ionicons name="stats-chart" size={24} color="#38bdf8" />
+          </View>
+        </Pressable>
 
         <View style={styles.list}>
           {objectives.map((objective) => (
@@ -72,6 +91,10 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
+  logoSection: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
   percentageCard: {
     backgroundColor: "#0f172a",
     borderRadius: 20,
@@ -95,6 +118,30 @@ const styles = StyleSheet.create({
     color: "#64748b",
     fontSize: 12,
     marginTop: 4,
+  },
+  statsCard: {
+    backgroundColor: "#020617",
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#1e293b",
+    marginBottom: 16,
+  },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  statsTitle: {
+    color: "#e2e8f0",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  statsSubtitle: {
+    color: "#64748b",
+    fontSize: 12,
+    marginTop: 2,
   },
   list: {
     gap: 12,

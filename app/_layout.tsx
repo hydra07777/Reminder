@@ -65,6 +65,7 @@ function AppContent() {
         />
         <Stack.Screen name="objective/[id]" options={{ title: "Détails" }} />
         <Stack.Screen name="settings" options={{ title: "Paramètres" }} />
+        <Stack.Screen name="stats" options={{ title: "Statistiques" }} />
       </Stack>
     </>
   );
