@@ -16,25 +16,44 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// Identifiants et canaux par créneau (un canal = un son sur Android)
+// Identifiants et canaux par créneau
 const NOTIFICATION_IDS = {
   morning: "motivational-morning",
   noon: "motivational-noon",
   evening: "motivational-evening",
 } as const;
 
-const CHANNEL_IDS = {
-  morning: "motivational-morning",
-  noon: "motivational-noon",
-  evening: "motivational-evening",
-} as const;
-
-// Sons par créneau (noms de fichiers déclarés dans app.json plugin expo-notifications)
-const SOUNDS: Record<keyof typeof NOTIFICATION_IDS, string> = {
-  morning: "morning.wav",
-  noon: "noon.wav",
-  evening: "evening.wav",
+// 3 canaux par créneau (Android 8+ : un son par canal)
+const CHANNEL_IDS: Record<keyof typeof NOTIFICATION_IDS, string[]> = {
+  morning: [
+    "motivational-morning-1",
+    "motivational-morning-2",
+    "motivational-morning-3",
+  ],
+  noon: ["motivational-noon-1", "motivational-noon-2", "motivational-noon-3"],
+  evening: [
+    "motivational-evening-1",
+    "motivational-evening-2",
+    "motivational-evening-3",
+  ],
 };
+
+// Sons par créneau (déclarés dans app.json plugin expo-notifications)
+const SOUND_VARIANTS: Record<keyof typeof NOTIFICATION_IDS, string[]> = {
+  morning: ["morning1.wav", "morning2.wav", "morning3.wav"],
+  noon: ["noon1.wav", "noon2.wav", "noon3.wav"],
+  evening: ["evening1.wav", "evening2.wav", "evening3.wav"],
+};
+
+function pickRandomSound(
+  timeOfDay: keyof typeof NOTIFICATION_IDS,
+): { sound: string; channelId: string } {
+  const variants = SOUND_VARIANTS[timeOfDay];
+  const idx = Math.floor(Math.random() * variants.length);
+  const sound = variants[idx];
+  const channelId = CHANNEL_IDS[timeOfDay][idx];
+  return { sound, channelId };
+}
 
 export async function requestNotificationPermissions(): Promise<boolean> {
   if (!areNotificationsSupported()) {
@@ -62,21 +81,25 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     return false;
   }
 
-  // Configuration pour Android : 3 canaux = 3 sons (matin, midi, soir)
+  // Configuration pour Android : création des canaux (sons déclarés dans app.json)
   if (Platform.OS === "android") {
-    const channelNames: Record<keyof typeof CHANNEL_IDS, string> = {
+    const channelNames: Record<keyof typeof NOTIFICATION_IDS, string> = {
       morning: "Rappel matin",
       noon: "Rappel midi",
       evening: "Rappel soir",
     };
     for (const timeOfDay of ["morning", "noon", "evening"] as const) {
-      await Notifications.setNotificationChannelAsync(CHANNEL_IDS[timeOfDay], {
-        name: channelNames[timeOfDay],
-        importance: Notifications.AndroidImportance.HIGH,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: "#38bdf8",
-        sound: SOUNDS[timeOfDay],
-      });
+      const sounds = SOUND_VARIANTS[timeOfDay];
+      const channels = CHANNEL_IDS[timeOfDay];
+      for (let i = 0; i < sounds.length; i++) {
+        await Notifications.setNotificationChannelAsync(channels[i], {
+          name: `${channelNames[timeOfDay]} (${i + 1})`,
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#38bdf8",
+          sound: sounds[i],
+        });
+      }
     }
   }
 
@@ -134,6 +157,7 @@ export async function scheduleMotivationalNotifications(
     for (const timeOfDay of times) {
       const { hour, minute } = getNotificationTime(timeOfDay);
       const message = getMotivationalMessage(timeOfDay, activeObjective);
+      const { sound, channelId } = pickRandomSound(timeOfDay);
 
       const notificationContent: Notifications.NotificationContentInput = {
         title:
@@ -143,7 +167,8 @@ export async function scheduleMotivationalNotifications(
               ? "☀️ C'est midi !"
               : "🌙 Bonne soirée !",
         body: message,
-        sound: SOUNDS[timeOfDay],
+        // Pour Android < 8 et iOS, on peut spécifier le son directement ici
+        sound,
       };
 
       // Ajouter la priorité Android si disponible
@@ -157,7 +182,7 @@ export async function scheduleMotivationalNotifications(
         content: notificationContent,
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          channelId: CHANNEL_IDS[timeOfDay],
+          channelId,
           hour,
           minute,
         },

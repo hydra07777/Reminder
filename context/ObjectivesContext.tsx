@@ -30,6 +30,8 @@ type ObjectivesContextType = {
   deleteObjective: (objectiveId: string) => Promise<void>;
   getOverallPercentage: () => number;
   getTodayStatus: (objectiveId: string) => DayStatus;
+  /** Nombre de jours consécutifs réussis (au moins un objectif) jusqu'à aujourd'hui */
+  getCurrentStreak: () => number;
 };
 
 const STORAGE_KEY = "@objectives_app";
@@ -146,6 +148,29 @@ export function ObjectivesProvider({ children }: { children: ReactNode }) {
     [objectives],
   );
 
+  /** Série actuelle : nombre de jours consécutifs (en remontant depuis aujourd'hui) avec au moins un objectif réussi */
+  const getCurrentStreak = useCallback(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let streak = 0;
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = formatDateToKey(d);
+      const hasSuccess = objectives.some(
+        (obj) => obj.dailyStatus[dateStr] === "success",
+      );
+      const inRange = objectives.some((obj) => {
+        const days = getDaysInRange(obj.startDate, obj.durationDays);
+        return days.includes(dateStr);
+      });
+      if (!inRange) break;
+      if (hasSuccess) streak++;
+      else break;
+    }
+    return streak;
+  }, [objectives]);
+
   return (
     <ObjectivesContext.Provider
       value={{
@@ -156,6 +181,7 @@ export function ObjectivesProvider({ children }: { children: ReactNode }) {
         deleteObjective,
         getOverallPercentage,
         getTodayStatus,
+        getCurrentStreak,
       }}
     >
       {children}

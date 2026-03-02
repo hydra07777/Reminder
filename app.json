@@ -53,9 +53,15 @@
         "expo-notifications",
         {
           "sounds": [
-            "./assets/sounds/morning.wav",
-            "./assets/sounds/noon.wav",
-            "./assets/sounds/evening.wav"
+            "./assets/sounds/morning1.wav",
+            "./assets/sounds/morning2.wav",
+            "./assets/sounds/morning3.wav",
+            "./assets/sounds/noon1.wav",
+            "./assets/sounds/noon2.wav",
+            "./assets/sounds/noon3.wav",
+            "./assets/sounds/evening1.wav",
+            "./assets/sounds/evening2.wav",
+            "./assets/sounds/evening3.wav"
           ]
         }
       ]

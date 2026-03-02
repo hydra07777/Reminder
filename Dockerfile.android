@@ -21,9 +21,10 @@ RUN mkdir -p $ANDROID_HOME/cmdline-tools && \
     mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest && \
     rm /tmp/cmdline.zip
 
-# Accepter les licences et installer les composants
+# Accepter les licences et installer les composants nécessaires
 RUN yes | sdkmanager --licenses 2>/dev/null || true
-RUN sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
+# Utilise une version stable et disponible du SDK Android (34)
+RUN sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;27.1.12297006"
 
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 

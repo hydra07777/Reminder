@@ -11,7 +11,7 @@ services:
     working_dir: /app
     environment:
       - ANDROID_HOME=/opt/android-sdk
-    # Produit l'APK dans android/app/build/outputs/apk/debug/ (sans émulateur)
+    # Produit un APK debug (plus tolérant côté dépendances natives) dans android/app/build/outputs/apk/debug/
     command: sh -c "echo 'sdk.dir=/opt/android-sdk' > android/local.properties && npm install && cd android && ./gradlew assembleDebug"
 
 volumes:
