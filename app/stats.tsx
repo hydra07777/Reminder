@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import {
@@ -103,49 +102,6 @@ function computeGlobalStats(objectives: Objective[]) {
     last7,
     longestStreak,
   };
-}
-
-function AreaChart({ values }: { values: number[] }) {
-  if (values.length === 0) {
-    values = [0];
-  }
-  const max = Math.max(1, ...values);
-  const normalized = values.map((v) => v / max);
-
-  const points = normalized
-    .map((v, i) => {
-      const x = (i / Math.max(1, normalized.length - 1)) * 100;
-      const y = 80 - v * 60; // marge en haut/bas
-      return `${x},${y}`;
-    })
-    .join(" ");
-
-  const firstX = 0;
-  const lastX = 100;
-  const baseY = 80;
-
-  const d =
-    normalized.length === 1
-      ? `M 0,${baseY} L 100,${baseY}`
-      : `M ${firstX},${baseY} L ${points} L ${lastX},${baseY} Z`;
-
-  const strokePath =
-    normalized.length === 1
-      ? `M 0,${baseY} L 100,${baseY}`
-      : `M ${points.split(" ")[0]} L ${points.split(" ").slice(1).join(" L ")}`;
-
-  return (
-    <Svg width="100%" height={140} viewBox="0 0 100 100">
-      <Defs>
-        <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#38bdf8" stopOpacity="0.35" />
-          <Stop offset="1" stopColor="#38bdf8" stopOpacity="0" />
-        </LinearGradient>
-      </Defs>
-      <Path d={d} fill="url(#grad)" />
-      <Path d={strokePath} fill="none" stroke="#38bdf8" strokeWidth={1.2} />
-    </Svg>
-  );
 }
 
 export default function StatsScreen() {
@@ -308,22 +264,38 @@ export default function StatsScreen() {
           <Ionicons name="calendar" size={18} color="#64748b" />
         </View>
         <View style={styles.card}>
-          <AreaChart values={stats.last7.map((d) => d.successCount)} />
-          <View style={styles.last7LabelsRow}>
+          <View style={styles.last7Row}>
             {stats.last7.map((day) => {
+              const total = day.successCount + day.failCount;
+              const h =
+                total === 0
+                  ? 10
+                  : 20 + (day.successCount / maxSuccessInLast7) * 50;
               const date = new Date(day.date);
               const label = date.toLocaleDateString("fr-FR", {
                 weekday: "short",
               });
               return (
-                <Text key={day.date} style={styles.dayLabel}>
-                  {label}
-                </Text>
+                <View key={day.date} style={styles.dayColumn}>
+                  <View style={[styles.dayBar, { height: h }]}>
+                    <View
+                      style={[
+                        styles.dayBarInner,
+                        day.successCount > 0
+                          ? styles.dayBarSuccess
+                          : day.failCount > 0
+                            ? styles.dayBarFail
+                            : styles.dayBarEmpty,
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.dayLabel}>{label}</Text>
+                </View>
               );
             })}
           </View>
           <Text style={styles.last7Hint}>
-            La courbe montre le nombre de jours réussis sur la semaine.
+            Barre pleine = au moins un objectif réussi ce jour-là.
           </Text>
         </View>
       </View>
