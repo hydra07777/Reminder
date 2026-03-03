@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
+import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   formatDateToKey,
@@ -103,6 +105,49 @@ function computeGlobalStats(objectives: Objective[]) {
   };
 }
 
+function AreaChart({ values }: { values: number[] }) {
+  if (values.length === 0) {
+    values = [0];
+  }
+  const max = Math.max(1, ...values);
+  const normalized = values.map((v) => v / max);
+
+  const points = normalized
+    .map((v, i) => {
+      const x = (i / Math.max(1, normalized.length - 1)) * 100;
+      const y = 80 - v * 60; // marge en haut/bas
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  const firstX = 0;
+  const lastX = 100;
+  const baseY = 80;
+
+  const d =
+    normalized.length === 1
+      ? `M 0,${baseY} L 100,${baseY}`
+      : `M ${firstX},${baseY} L ${points} L ${lastX},${baseY} Z`;
+
+  const strokePath =
+    normalized.length === 1
+      ? `M 0,${baseY} L 100,${baseY}`
+      : `M ${points.split(" ")[0]} L ${points.split(" ").slice(1).join(" L ")}`;
+
+  return (
+    <Svg width="100%" height={140} viewBox="0 0 100 100">
+      <Defs>
+        <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#38bdf8" stopOpacity="0.35" />
+          <Stop offset="1" stopColor="#38bdf8" stopOpacity="0" />
+        </LinearGradient>
+      </Defs>
+      <Path d={d} fill="url(#grad)" />
+      <Path d={strokePath} fill="none" stroke="#38bdf8" strokeWidth={1.2} />
+    </Svg>
+  );
+}
+
 export default function StatsScreen() {
   const { objectives, getCurrentStreak } = useObjectives();
   const stats = computeGlobalStats(objectives);
@@ -115,6 +160,58 @@ export default function StatsScreen() {
   const maxSuccessInLast7 = Math.max(
     1,
     ...stats.last7.map((d) => d.successCount),
+  );
+
+  // Filtres pour l'activité détaillée
+  type RangeKey = "30d" | "60d" | "90d" | "180d" | "365d";
+  const RANGE_CONFIG: Record<RangeKey, { days: number; label: string }> = {
+    "30d": { days: 30, label: "30 jours" },
+    "60d": { days: 60, label: "60 jours" },
+    "90d": { days: 90, label: "3 mois" },
+    "180d": { days: 180, label: "6 mois" },
+    "365d": { days: 365, label: "1 an" },
+  };
+
+  const [range, setRange] = useState<RangeKey>("30d");
+
+  const detailedSeries = useMemo(() => {
+    const { days } = RANGE_CONFIG[range];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const perDay = new Map<string, DaySummary>();
+    objectives.forEach((obj) => {
+      const daysInRange = getDaysInRange(obj.startDate, obj.durationDays);
+      daysInRange.forEach((dateStr) => {
+        const status = obj.dailyStatus[dateStr];
+        let summary = perDay.get(dateStr);
+        if (!summary) {
+          summary = { date: dateStr, successCount: 0, failCount: 0 };
+          perDay.set(dateStr, summary);
+        }
+        if (status === "success") summary.successCount += 1;
+        else if (status === "fail") summary.failCount += 1;
+      });
+    });
+
+    const series: DaySummary[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateStr = formatDateToKey(d);
+      const summary = perDay.get(dateStr) ?? {
+        date: dateStr,
+        successCount: 0,
+        failCount: 0,
+      };
+      series.push(summary);
+    }
+    return series;
+  }, [objectives, range]);
+
+  const maxSuccessInRange = useMemo(
+    () => Math.max(1, ...detailedSeries.map((d) => d.successCount)),
+    [detailedSeries],
   );
 
   return (
@@ -211,20 +308,63 @@ export default function StatsScreen() {
           <Ionicons name="calendar" size={18} color="#64748b" />
         </View>
         <View style={styles.card}>
-          <View style={styles.last7Row}>
+          <AreaChart values={stats.last7.map((d) => d.successCount)} />
+          <View style={styles.last7LabelsRow}>
             {stats.last7.map((day) => {
-              const total = day.successCount + day.failCount;
-              const h =
-                total === 0
-                  ? 10
-                  : 20 + (day.successCount / maxSuccessInLast7) * 50;
               const date = new Date(day.date);
               const label = date.toLocaleDateString("fr-FR", {
                 weekday: "short",
               });
               return (
-                <View key={day.date} style={styles.dayColumn}>
-                  <View style={[styles.dayBar, { height: h }]}>
+                <Text key={day.date} style={styles.dayLabel}>
+                  {label}
+                </Text>
+              );
+            })}
+          </View>
+          <Text style={styles.last7Hint}>
+            La courbe montre le nombre de jours réussis sur la semaine.
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Activité détaillée</Text>
+          <View style={styles.rangeRow}>
+            {(Object.keys(RANGE_CONFIG) as RangeKey[]).map((key) => (
+              <Text
+                key={key}
+                onPress={() => setRange(key)}
+                style={[
+                  styles.rangeChip,
+                  range === key && styles.rangeChipActive,
+                ]}
+              >
+                {RANGE_CONFIG[key].label}
+              </Text>
+            ))}
+          </View>
+        </View>
+        <View style={styles.card}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.detailedScroll}
+          >
+            {detailedSeries.map((day) => {
+              const date = new Date(day.date);
+              const label = date.toLocaleDateString("fr-FR", {
+                day: "2-digit",
+                month: "2-digit",
+              });
+              const h =
+                day.successCount === 0 && day.failCount === 0
+                  ? 8
+                  : 18 + (day.successCount / maxSuccessInRange) * 50;
+              return (
+                <View key={day.date} style={styles.dayColumnDetailed}>
+                  <View style={[styles.dayBarDetailed, { height: h }]}>
                     <View
                       style={[
                         styles.dayBarInner,
@@ -236,13 +376,14 @@ export default function StatsScreen() {
                       ]}
                     />
                   </View>
-                  <Text style={styles.dayLabel}>{label}</Text>
+                  <Text style={styles.dayLabelDetailed}>{label}</Text>
                 </View>
               );
             })}
-          </View>
+          </ScrollView>
           <Text style={styles.last7Hint}>
-            Barre pleine = au moins un objectif réussi ce jour-là.
+            Vert = au moins un objectif réussi ce jour-là, rouge = uniquement
+            des échecs.
           </Text>
         </View>
       </View>
@@ -387,15 +528,56 @@ const styles = StyleSheet.create({
     color: "#64748b",
     fontSize: 12,
   },
+  rangeRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  rangeChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: "#1e293b",
+    color: "#94a3b8",
+    fontSize: 12,
+  },
+  rangeChipActive: {
+    backgroundColor: "#38bdf8",
+    borderColor: "#38bdf8",
+    color: "#0f172a",
+  },
   last7Row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
     marginTop: 8,
   },
+  last7LabelsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
   dayColumn: {
     alignItems: "center",
     flex: 1,
+  },
+  detailedScroll: {
+    paddingVertical: 8,
+    paddingRight: 8,
+    gap: 8,
+  },
+  dayColumnDetailed: {
+    alignItems: "center",
+    marginRight: 8,
+  },
+  dayBarDetailed: {
+    width: 14,
+    borderRadius: 9999,
+    justifyContent: "flex-end",
+    backgroundColor: "#020617",
+    borderWidth: 1,
+    borderColor: "#1e293b",
+    overflow: "hidden",
   },
   dayBar: {
     width: 16,
@@ -423,10 +605,14 @@ const styles = StyleSheet.create({
     color: "#64748b",
     fontSize: 11,
   },
+  dayLabelDetailed: {
+    marginTop: 4,
+    color: "#64748b",
+    fontSize: 9,
+  },
   last7Hint: {
     marginTop: 8,
     color: "#64748b",
     fontSize: 12,
   },
 });
-

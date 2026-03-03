@@ -4,8 +4,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import DynamicLogo from "../components/DynamicLogo";
 import ObjectiveCard from "../components/ObjectiveCard";
 import {
-  useObjectives,
   getTodayDateString,
+  useObjectives,
 } from "../context/ObjectivesContext";
 
 export default function Home() {
