@@ -170,6 +170,15 @@ export default function StatsScreen() {
     [detailedSeries],
   );
 
+  // Limiter le nombre de barres affichées pour rester lisible sur l'écran
+  const MAX_VISIBLE_BARS = 14;
+  const displaySeries = useMemo(() => {
+    const n = detailedSeries.length;
+    if (n <= MAX_VISIBLE_BARS) return detailedSeries;
+    const step = Math.ceil(n / MAX_VISIBLE_BARS);
+    return detailedSeries.filter((_, index) => index % step === 0);
+  }, [detailedSeries]);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.section}>
@@ -319,12 +328,8 @@ export default function StatsScreen() {
           </View>
         </View>
         <View style={styles.card}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.detailedScroll}
-          >
-            {detailedSeries.map((day) => {
+          <View style={styles.detailedRow}>
+            {displaySeries.map((day) => {
               const date = new Date(day.date);
               const label = date.toLocaleDateString("fr-FR", {
                 day: "2-digit",
@@ -352,7 +357,7 @@ export default function StatsScreen() {
                 </View>
               );
             })}
-          </ScrollView>
+          </View>
           <Text style={styles.last7Hint}>
             Vert = au moins un objectif réussi ce jour-là, rouge = uniquement
             des échecs.
@@ -537,6 +542,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingRight: 8,
     gap: 8,
+  },
+  detailedRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
   },
   dayColumnDetailed: {
     alignItems: "center",
