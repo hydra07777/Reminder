@@ -30,7 +30,8 @@ function formatDateForDisplay(dateStr: string): string {
 export default function ObjectiveDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { objectives, deleteObjective, updateDayStatus, extendObjective } = useObjectives();
+  const { objectives, deleteObjective, updateDayStatus, extendObjective } =
+    useObjectives();
 
   // Trouver l'objectif et recalculer à chaque changement
   const objective = useMemo(
@@ -43,7 +44,9 @@ export default function ObjectiveDetail() {
   // Tous les hooks doivent être appelés avant tout return conditionnel
   const { success, total, percentage } = useMemo(
     () =>
-      objective ? getObjectiveProgress(objective) : { success: 0, total: 0, percentage: 0 },
+      objective
+        ? getObjectiveProgress(objective)
+        : { success: 0, total: 0, percentage: 0 },
     [objective],
   );
 
@@ -297,7 +300,18 @@ export default function ObjectiveDetail() {
 
   const handleExtend = (additionalDays: number) => {
     if (!objective) return;
-    extendObjective(objective.id, additionalDays);
+    const newDuration = objective.durationDays + additionalDays;
+    Alert.alert(
+      "Prolonger l'objectif",
+      `Tu veux passer de ${objective.durationDays} jours à ${newDuration} jours ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Confirmer",
+          onPress: () => extendObjective(objective.id, additionalDays),
+        },
+      ],
+    );
   };
 
   const handleDayStatusChange = (
@@ -317,22 +331,18 @@ export default function ObjectiveDetail() {
     }
 
     // Proposer succès ou échec
-    Alert.alert(
-      "Marquer la journée",
-      "Comment s'est passée cette journée ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Réussi",
-          onPress: () => updateDayStatus(objective.id, date, "success"),
-        },
-        {
-          text: "Échoué",
-          style: "destructive",
-          onPress: () => updateDayStatus(objective.id, date, "fail"),
-        },
-      ],
-    );
+    Alert.alert("Marquer la journée", "Comment s'est passée cette journée ?", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Réussi",
+        onPress: () => updateDayStatus(objective.id, date, "success"),
+      },
+      {
+        text: "Échoué",
+        style: "destructive",
+        onPress: () => updateDayStatus(objective.id, date, "fail"),
+      },
+    ]);
   };
 
   // Retour anticipé après tous les hooks (objectif supprimé = navigation en cours)
