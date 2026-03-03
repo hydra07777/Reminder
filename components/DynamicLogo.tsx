@@ -1,13 +1,3 @@
-/**
- * Logo dynamique façon Duolingo : change selon l'heure et la série (streak).
- * - Créneau : matin / midi / soir (couleur + petit emoji)
- * - Série : badge 🔥 si streak >= 3
- *
- * Pour des images différentes par créneau, place dans assets/images/mascot/ :
- *   logo-morning.png, logo-noon.png, logo-evening.png
- * et décommente la logique "image par variant" dans le composant.
- */
-import { Image } from "expo-image";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useObjectives } from "../context/ObjectivesContext";
@@ -48,39 +38,43 @@ export default function DynamicLogo({
   const config = TIME_CONFIG[timeOfDay];
 
   return (
-    <View style={[styles.wrapper, { width: size + 32, height: size + 32 }]}>
+    <View style={styles.wrapper}>
       <View
         style={[
-          styles.ring,
+          styles.logoWrapper,
           {
             width: size + 24,
             height: size + 24,
             borderRadius: (size + 24) / 2,
-            borderColor: config.ringColor,
           },
         ]}
-      />
-      <View style={[styles.logoContainer, { width: size, height: size }]}>
-        <Image
-          source={require("../assets/images/icon.png")}
-          style={[styles.logo, { width: size, height: size }]}
-          contentFit="contain"
+      >
+        <View
+          style={[
+            styles.ring,
+            {
+              width: size + 24,
+              height: size + 24,
+              borderRadius: (size + 24) / 2,
+              borderColor: config.ringColor,
+            },
+          ]}
         />
-        <View style={styles.emojiBadge}>
-          <Text style={[styles.emoji, { fontSize: size * 0.22 }]}>
-            {config.emoji}
-          </Text>
+        <View style={[styles.logoContainer, { width: size, height: size }]}>
+          <View style={styles.emojiBadge}>
+            <Text style={[styles.emoji, { fontSize: size * 0.22 }]}>
+              {config.emoji}
+            </Text>
+          </View>
+          {showStreakBadge && streak >= 3 && (
+            <View style={styles.streakBadge}>
+              <Text style={styles.streakEmoji}>🔥</Text>
+              <Text style={styles.streakCount}>{streak}</Text>
+            </View>
+          )}
         </View>
       </View>
-      {showStreakBadge && streak >= 3 && (
-        <View style={styles.streakBadge}>
-          <Text style={styles.streakEmoji}>🔥</Text>
-          <Text style={styles.streakCount}>{streak}</Text>
-        </View>
-      )}
-      {showLabel && (
-        <Text style={styles.label}>{config.label}</Text>
-      )}
+      {showLabel && <Text style={styles.label}>{config.label}</Text>}
     </View>
   );
 }
@@ -90,12 +84,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  logoWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
   ring: {
     position: "absolute",
     borderWidth: 3,
   },
   logoContainer: {
-    position: "relative",
+    position: "absolute",
     alignItems: "center",
     justifyContent: "center",
   },
