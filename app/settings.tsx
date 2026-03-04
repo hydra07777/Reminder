@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useSettings } from "../context/SettingsContext";
 import { useObjectives } from "../context/ObjectivesContext";
-import { Alert, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { areNotificationsSupported } from "../utils/expoGoCheck";
+import { getScheduledNotificationsSummary } from "../utils/notificationService";
 
 export default function Settings() {
   const {
@@ -25,6 +26,19 @@ export default function Settings() {
       return;
     }
     await toggleMotivationalNotifications(objectives);
+  };
+
+  const handleCheckNotifications = async () => {
+    if (!notificationsSupported) {
+      Alert.alert(
+        "Notifications non disponibles",
+        "Impossible de vérifier les notifications dans Expo Go sur Android.\n\nTeste plutôt avec un APK ou un development build.",
+        [{ text: "OK" }],
+      );
+      return;
+    }
+    const summary = await getScheduledNotificationsSummary();
+    Alert.alert("Notifications programmées", summary, [{ text: "OK" }]);
   };
 
   return (
@@ -80,6 +94,19 @@ export default function Settings() {
             thumbColor={dailyMotivation ? "#fff" : "#94a3b8"}
           />
         </View>
+
+        <Pressable style={styles.row} onPress={handleCheckNotifications}>
+          <View style={styles.rowContent}>
+            <Ionicons name="list" size={24} color="#38bdf8" />
+            <View style={styles.labelContainer}>
+              <Text style={styles.label}>Vérifier les notifications</Text>
+              <Text style={styles.description}>
+                Affiche combien de notifications locales sont programmées et à
+                quelles heures.
+              </Text>
+            </View>
+          </View>
+        </Pressable>
       </View>
 
       {motivationalNotifications && (

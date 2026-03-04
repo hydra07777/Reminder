@@ -45,9 +45,10 @@ const SOUND_VARIANTS: Record<keyof typeof NOTIFICATION_IDS, string[]> = {
   evening: ["evening1.wav", "evening2.wav", "evening3.wav"],
 };
 
-function pickRandomSound(
-  timeOfDay: keyof typeof NOTIFICATION_IDS,
-): { sound: string; channelId: string } {
+function pickRandomSound(timeOfDay: keyof typeof NOTIFICATION_IDS): {
+  sound: string;
+  channelId: string;
+} {
   const variants = SOUND_VARIANTS[timeOfDay];
   const idx = Math.floor(Math.random() * variants.length);
   const sound = variants[idx];
@@ -211,4 +212,33 @@ export async function updateNotificationMessages(
     // Re-programmer avec les nouveaux messages
     await scheduleMotivationalNotifications(objectives);
   }
+}
+
+export async function getScheduledNotificationsSummary(): Promise<string> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+
+  if (!scheduled.length) {
+    return "Aucune notification programmée pour le moment.";
+  }
+
+  const lines = scheduled.map((n) => {
+    const id = n.identifier;
+    const trigger: any = n.trigger;
+    let time = "";
+    if (
+      trigger &&
+      trigger.type === Notifications.SchedulableTriggerInputTypes.DAILY
+    ) {
+      const h = trigger.hour ?? "?";
+      const m = trigger.minute ?? "?";
+      const hh = String(h).padStart(2, "0");
+      const mm = String(m).padStart(2, "0");
+      time = `${hh}:${mm}`;
+    }
+    return `• ${id}${time ? " à " + time : ""}`;
+  });
+
+  return `Total: ${scheduled.length} notification(s) programmée(s)\n\n${lines.join(
+    "\n",
+  )}`;
 }

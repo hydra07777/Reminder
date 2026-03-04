@@ -13,6 +13,7 @@
     },
     "android": {
       "minSdkVersion": 24,
+      "permissions": ["POST_NOTIFICATIONS", "SCHEDULE_EXACT_ALARM"],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -75,6 +76,12 @@
       "eas": {
         "projectId": "060d97b3-4ca5-407a-842c-c6175754e8ec"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/060d97b3-4ca5-407a-842c-c6175754e8ec"
     }
   }
 }
